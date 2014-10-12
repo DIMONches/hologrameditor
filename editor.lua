@@ -6,5 +6,8 @@ local gpu = com.gpu
 WIDTH, HEIGHT = gpu.getResolution()
 
 
+
+
+
 -- end
 term.clear()
