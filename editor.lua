@@ -3,9 +3,53 @@ local fs = require('filesystem')
 local com = require('component')
 local gpu = com.gpu
 
+--   Константы   --
 HOLOH = 32
 HOLOW = 48
 
+--     Цвета     --
+backcolor = 0x000000
+forecolor = 0xFFFFFF
+infocolor = 0x0066FF
+errorcolor = 0xFF0000
+helpcolor = 0x00FF00
+--      ***      --
+
+-- ============================================= G R A P H I C S ============================================= --
+-- проверка разрешения экрана, для комфортной работы необходимо разрешение > HOLOW по высоте и ширине
+WIDTH, HEIGHT = gpu.getResolution()
+if HEIGHT < HOLOW then 
+  WIDTH, HEIGHT = gpu.maxResolution()
+  if HEIGHT < HOLOW then
+    print("[ОШИБКА] Ваш монитор/видеокарта не поддерживает требуемое разрешение.")
+    return false
+  else
+    gpu.setResolution(WIDTH, HEIGHT)
+  end
+end
+
+-- рисуем линию
+local strLine = "+"
+for i=1, width do
+  strLine = strLine..'-'
+end
+function line(x1, x2, y)
+  gpu.set(x1,y,string.sub(strLine, 1, x2-x1))
+  gpu.set(x2,y,'+')
+end
+
+-- рисуем фрейм
+function frame(x1, y1, x2, y2, caption)
+  line(x1, x2, y1)
+  line(x1, x2, y2)
+
+  if caption ~= nil then
+    gpu.set(x1+(x2-x1)/2-#caption/2, y1, caption)
+  end
+end
+
+
+-- ========================================= H O L O G R A P H I C S ========================================= --
 holo = {}
 function set(x, y, z, brush)
   if holo[x] == nil then holo[x] = {} end
@@ -59,10 +103,10 @@ function load(filename)
   end
 end
 
--- init
-WIDTH, HEIGHT = gpu.getResolution()
+
+-- =========================================== M A I N   C Y C L E =========================================== --
 
 
 
 -- end
---term.clear()
+term.clear()
