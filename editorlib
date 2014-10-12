@@ -1,0 +1,70 @@
+array= {}
+
+function cut(line)
+   simbol= {}
+   words= {}
+   for i=1,#line do
+   	  simbol[#simbol+1]= string.sub(line,i,i)
+   end
+
+   for i=1,#simbol do
+   	  
+   end
+
+end
+
+
+function writeFile()
+	path= fs.open("hologram.3d","w")
+	for i=1,#array/4 do
+		color,x,y,z= get_array(i)
+		path.writeLine(color.."|"..x.."|"..y.."|"..z)
+	end
+	path.close()
+end
+
+function readFile()
+	path= fs.open("hologram.3d","r")
+	temp= ""
+	while true do
+		temp= path.readLine()
+		if temp == nil
+		then
+		   break
+		end
+
+	end
+end
+
+
+
+function set_array(color,x,y,z)
+	array[#array+1]=color
+	array[#array+1]=x
+	array[#array+1]=y
+	array[#array+1]=z
+end
+
+function get_array(index)
+   local color
+   local x
+   local y
+   local z
+   color= array[index]
+   x= array[index+1]
+   y= array[index+2]
+   z= array[index+3]
+   return color,x,y,z
+end
+
+
+for i=1,1000 do
+	color= 0
+	x= math.random(1,10)
+	y= math.random(1,10)
+	z= math.random(1,10)
+	set_array(color,x,y,z)
+end
+
+writeFile()
+
