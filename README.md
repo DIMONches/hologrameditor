@@ -1,1 +1,8 @@
-OpenComputers program . HologramEditor:Coder Totoro,NEO
+Program for OpenComputers mod(Minecraft) 
+
+HologramEditor v0.0
+func
+--
+--
+--
+Programming Totoro,NEO
