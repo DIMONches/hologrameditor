@@ -1,3 +1,5 @@
+local unicode = require('unicode')
+local event = require('event')
 local term = require('term')
 local fs = require('filesystem')
 local com = require('component')
@@ -13,24 +15,27 @@ forecolor = 0xFFFFFF
 infocolor = 0x0066FF
 errorcolor = 0xFF0000
 helpcolor = 0x00FF00
+graycolor = 0x080808
 --      ***      --
 
 -- ============================================= G R A P H I C S ============================================= --
 -- проверка разрешения экрана, для комфортной работы необходимо разрешение > HOLOW по высоте и ширине
-WIDTH, HEIGHT = gpu.getResolution()
-if HEIGHT < HOLOW then 
-  WIDTH, HEIGHT = gpu.maxResolution()
-  if HEIGHT < HOLOW then
-    print("[ОШИБКА] Ваш монитор/видеокарта не поддерживает требуемое разрешение.")
-    return false
-  else
-    gpu.setResolution(WIDTH, HEIGHT)
-  end
+OLDWIDTH, OLDHEIGHT = gpu.getResolution()
+WIDTH, HEIGHT = gpu.maxResolution()
+if HEIGHT < HOLOW+2 then
+  print("[ОШИБКА] Ваш монитор/видеокарта не поддерживает требуемое разрешение.")
+  return false
+else
+  WIDTH = HOLOW*2+40
+  HEIGHT = HOLOW+2
+  gpu.setResolution(WIDTH, HEIGHT)
 end
+gpu.setForeground(forecolor)
+gpu.setBackground(backcolor)
 
 -- рисуем линию
 local strLine = "+"
-for i=1, width do
+for i=1, WIDTH do
   strLine = strLine..'-'
 end
 function line(x1, x2, y)
@@ -44,10 +49,58 @@ function frame(x1, y1, x2, y2, caption)
   line(x1, x2, y2)
 
   if caption ~= nil then
-    gpu.set(x1+(x2-x1)/2-#caption/2, y1, caption)
+    gpu.set(x1+(x2-x1)/2-unicode.len(caption)/2, y1, caption)
   end
 end
 
+-- рисуем сетку
+local strGrid = ""
+for i=1, HOLOW/2 do
+  strGrid = strGrid.."██  "
+end
+function drawGrid(x, y)
+  gpu.setForeground(graycolor)
+  for i=0, HOLOW-1 do
+    gpu.set(x+(i%2)*2, y+i, strGrid)
+  end
+  gpu.setForeground(forecolor)
+end
+
+-- рисуем цветной прямоугольник
+function drawRect(x, y, color)
+  gpu.set(x, y,   "╓──────╖")
+  gpu.set(x, y+1, "║      ║")
+  gpu.set(x, y+2, "╙──────╜")
+  gpu.setForeground(color)
+  gpu.set(x+2, y+1, "████")
+  gpu.setForeground(forecolor)
+end
+
+MENUX = HOLOW*2+5
+
+-- рисуем меню выбора "кисти"
+function drawColorSelector()
+  frame(MENUX, 3, WIDTH-2, 16, "[ Цвета ]")
+  for i=0, 3 do
+    drawRect(MENUX+1+i*8, 5, colortable[i])
+  end
+end
+function drawLayerSelector()
+  frame(MENUX, 16, WIDTH-2, 21, "[ Слой ]")
+end
+function drawButtonsPanel()
+  frame(MENUX, 21, WIDTH-2, 32, "[ Управление ]")
+end
+
+function mainScreen()
+  term.clear()
+  frame(1,1, WIDTH, HEIGHT, "{ Hologram Editor }")
+  -- "холст"
+  drawGrid(3,2)
+  drawColorSelector()
+  drawLayerSelector()
+  drawButtonsPanel()
+end
 
 -- ========================================= H O L O G R A P H I C S ========================================= --
 holo = {}
@@ -105,8 +158,13 @@ end
 
 
 -- =========================================== M A I N   C Y C L E =========================================== --
+-- инициализация
+colortable = {0xFF0000, 0x00FF00, 0x0066FF}
+colortable[0] = 0x000000
 
+mainScreen()
+event.pull('key_down')
 
-
--- end
+-- завершение
 term.clear()
+gpu.setResolution(OLDWIDTH, OLDHEIGHT)
