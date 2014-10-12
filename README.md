@@ -5,5 +5,5 @@ func:
 --
 editor.lua  main file.
 editorlib  lib file for main file.
---
 Programming Totoro,NEO
+--
