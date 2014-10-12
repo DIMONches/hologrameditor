@@ -21,7 +21,7 @@ function get(x, y, z)
 end
 
 function save(filename)
-  file = io.open(filename, 'w')
+  file = io.open(filename, 'wb')
   for x=1, HOLOW do
     for y=1, HOLOH do
       for z=1, HOLOW, 4 do
@@ -39,6 +39,7 @@ end
 
 function load(filename)
   if fs.exists(filename) then
+    file = io.open(filename, 'rb')
     holo = {}
     for x=1, HOLOW do
       for y=1, HOLOH do
@@ -46,12 +47,13 @@ function load(filename)
           byte = string.byte(file:read(1))
           for i=0, 3 do
             a = byte % 4
-            byte = byte / 4
+            byte = math.floor(byte / 4)
             if a ~= 0 then set(x,y,z+i, a) end
           end
         end
       end
     end
+    file:close()
   else
     print("[ОШИБКА] Файл "..filename.." не найден.")
   end
@@ -62,10 +64,5 @@ WIDTH, HEIGHT = gpu.getResolution()
 
 
 
-
-<<<<<<< HEAD
-=======
-
->>>>>>> 8484ea5cbe4ed87f37a2cf681c6afe1067373f95
 -- end
-term.clear()
+--term.clear()
