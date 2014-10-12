@@ -1,6 +1,10 @@
+local term = require('term')
 local com = require('component')
 local gpu = com.gpu
 
--- test
--- test
--- test
+-- init
+WIDTH, HEIGHT = gpu.getResolution()
+
+
+-- end
+term.clear()
