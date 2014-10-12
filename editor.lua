@@ -63,5 +63,9 @@ WIDTH, HEIGHT = gpu.getResolution()
 
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8484ea5cbe4ed87f37a2cf681c6afe1067373f95
 -- end
 term.clear()
