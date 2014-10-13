@@ -36,7 +36,14 @@ function get(x, y, z)
 end
 
 function save(filename)
+  -- сохраняем палитру
   file = io.open(filename, 'wb')
+  for i=1, 3 do
+    for c=1, 3 do
+      file:write(string.char(colortable[i][c]))
+    end
+  end
+  -- сохраняем массив
   for x=1, HOLOW do
     for y=1, HOLOH do
       for z=1, HOLOW, 4 do
@@ -55,6 +62,17 @@ end
 function load(filename)
   if fs.exists(filename) then
     file = io.open(filename, 'rb')
+    -- загружаем палитру
+    for i=1, 3 do
+      for c=1, 3 do
+        colortable[i][c] = string.byte(file:read(1))
+      end
+      hexcolortable[i] = 
+        rgb2hex(colortable[i][1],
+                colortable[i][2],
+                colortable[i][3])
+    end
+    -- загружаем массив
     holo = {}
     for x=1, HOLOW do
       for y=1, HOLOH do
@@ -424,9 +442,9 @@ while running do
     -- если нажата 'Q' - выходим
     if y == 16 then break end
   elseif name == 'touch' then
+    -- проверка GUI
     buttonsClick(x, y)
     textboxesClick(x, y)
-
     -- выбор цвета
     if x>MENUX+1 and x<MENUX+37 then
       if y>4 and y<8 then
