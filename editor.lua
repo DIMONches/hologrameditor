@@ -14,7 +14,7 @@ backcolor = 0x000000
 forecolor = 0xFFFFFF
 infocolor = 0x0066FF
 errorcolor = 0xFF0000
-helpcolor = 0x00FF00
+helpcolor = 0x006600
 graycolor = 0x080808
 goldcolor = 0xFFDF00
 --      ***      --
@@ -169,7 +169,7 @@ BUTTONW = 12
 
 -- рисуем меню выбора "кисти"
 function drawColorSelector()
-  frame(MENUX, 3, WIDTH-2, 16, "[ Цвета ]")
+  frame(MENUX, 3, WIDTH-2, 16, "[ Палитра ]")
   for i=0, 3 do
     drawRect(MENUX+1+i*8, 5, hexcolortable[i])
   end
@@ -280,7 +280,7 @@ end
 function Button:click(x, y)
   if self.visible then
     if y == self.y then
-      if x >= self.x and x <= self.x+#self.form then
+      if x >= self.x and x < self.x+unicode.len(self.form) then
         self.func()
         self:draw(self.color/2)
         os.sleep(0.1)
@@ -332,10 +332,17 @@ function setLayer(value)
   return true
 end
 
+function setFilename(str)
+  if str ~= nil and str ~= '' and unicode.len(str)<30 then 
+    return true
+  else
+    return false
+  end
+end
+
 function rgb2hex(r,g,b)
   return r*65536+g*256+b
 end
-
 function changeRed(value) return changeColor(1, value) end
 function changeGreen(value) return changeColor(2, value) end
 function changeBlue(value) return changeColor(3, value) end
@@ -359,13 +366,28 @@ end
 function drawHologram()
   -- проверка на наличие проектора
   if h ~= nil then
+    local depth = h.maxDepth()
+    -- очищаем
     h.clear()
+    -- отправляем палитру
+    if depth == 3 then
+      for i=1, 3 do
+        h.setPaletteColor(i, hexcolortable[i])
+      end
+    else
+      h.setPaletteColor(1, hexcolortable[1])
+    end
+    -- отправляем массив
     for x=1, HOLOW do
       for y=1, HOLOH do
         for z=1, HOLOW do
           n = get(x,y,z)
           if n ~= 0 then
-            h.set(x,y,z,n)
+            if depth == 3 then
+              h.set(x,y,z,n)
+            else
+              h.set(x,y,z,1)
+            end
           end
         end
       end      
@@ -373,6 +395,40 @@ function drawHologram()
   end
 end
 
+function newHologram()
+  holo = {}
+  drawLayer()
+end
+
+function saveHologram()
+  local filename = tb_file:getValue()
+  if filename ~= FILE_REQUEST then
+    -- добавляем фирменное расширение =)
+    if string.sub(filename, -3) ~= '.3d' then
+      filename = filename..'.3d'
+    end
+    -- сохраняем
+    save(filename)
+  end
+end
+
+function loadHologram()
+  local filename = tb_file:getValue()
+  if filename ~= FILE_REQUEST then
+    -- добавляем фирменное расширение =)
+    if string.sub(filename, -3) ~= '.3d' then
+      filename = filename..'.3d'
+    end
+    -- загружаем
+    load(filename)
+    -- обновляем цвета на панельке
+    for i=0, 3 do
+      drawRect(MENUX+1+i*8, 5, hexcolortable[i])
+    end
+    -- обновляем слой
+    drawLayer()
+  end
+end
 
 -- ============================================ T E X T B O X E S ============================================ --
 Textbox = {}
@@ -405,7 +461,7 @@ end
 function Textbox:click(x, y)
   if self.visible then
     if y == self.y then
-      if x >= self.x and x <= self.x+#self.form then
+      if x >= self.x and x < self.x+unicode.len(self.form) then
         self:draw(false)
         term.setCursor(self.x+2, self.y)
         value = string.sub(term.read({self.value}), 1, -2)
@@ -421,6 +477,9 @@ function Textbox:click(x, y)
 end
 function Textbox:setValue(value)
   self.value = tostring(value)
+end
+function Textbox:getValue()
+  return self.value
 end
 textboxes = {}
 function textboxesNew(func, x, y, value, width)
@@ -456,11 +515,18 @@ buttonsNew(prevLayer, MENUX+1, 19, '-', infocolor, 5)
 buttonsNew(nextLayer, MENUX+7, 19, '+', infocolor, 5)
 buttonsNew(clearLayer, MENUX+1, 21, 'Очистить', infocolor, BUTTONW)
 buttonsNew(fillLayer, MENUX+2+BUTTONW, 21, 'Залить', infocolor, BUTTONW)
-buttonsNew(drawHologram, MENUX+1, 25, 'На голограмму', goldcolor, 15)
+buttonsNew(drawHologram, MENUX+8, 25, 'На проектор', goldcolor, 16)
+
+buttonsNew(saveHologram, MENUX+1, 28, 'Сохранить', helpcolor, BUTTONW)
+buttonsNew(loadHologram, MENUX+8+BUTTONW, 28, 'Загрузить', infocolor, BUTTONW)
+buttonsNew(newHologram, MENUX+1, 30, 'Новый файл', infocolor, BUTTONW)
+
 tb_red = textboxesNew(changeRed, MENUX+5, 10, '255', WIDTH-MENUX-7)
 tb_green = textboxesNew(changeGreen, MENUX+5, 11, '0', WIDTH-MENUX-7)
 tb_blue = textboxesNew(changeBlue, MENUX+5, 12, '0', WIDTH-MENUX-7)
 tb_layer = textboxesNew(setLayer, MENUX+13, 19, '1', WIDTH-MENUX-15)
+FILE_REQUEST = 'Введите сюда имя файла'
+tb_file = textboxesNew(setFilename, MENUX+1, 27, FILE_REQUEST, WIDTH-MENUX-3)
 mainScreen()
 
 while running do
