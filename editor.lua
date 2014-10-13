@@ -23,8 +23,9 @@ graycolor = 0x080808
 OLDWIDTH, OLDHEIGHT = gpu.getResolution()
 WIDTH, HEIGHT = gpu.maxResolution()
 if HEIGHT < HOLOW+2 then
-  print("[ОШИБКА] Ваш монитор/видеокарта не поддерживает требуемое разрешение.")
-  return false
+  --print("[ОШИБКА] Ваш монитор/видеокарта не поддерживает требуемое разрешение.")
+  error("[ОШИБКА] Ваш монитор/видеокарта не поддерживает требуемое разрешение.")
+  --return false
 else
   WIDTH = HOLOW*2+40
   HEIGHT = HOLOW+2
