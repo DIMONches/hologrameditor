@@ -26,11 +26,7 @@ holo[1][1]= {}
 
 -- ========================================= H O L O G R A P H I C S ========================================= --
 
-function set(x, y, z, brush)
-=======
-holo = {}
 function set(x, y, z, value)
->>>>>>> 468a45dbc94ceaa0a9fc9af63b77d065f583d76a
   if holo[x] == nil then holo[x] = {} end
   if holo[x][y] == nil then holo[x][y] = {} end
   holo[x][y][z] = value
