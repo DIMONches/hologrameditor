@@ -4,7 +4,6 @@ local term = require('term')
 local fs = require('filesystem')
 local com = require('component')
 local gpu = com.gpu
-local h= com.hologram
 
 --   Константы   --
 HOLOH = 32
@@ -19,13 +18,21 @@ helpcolor = 0x00FF00
 graycolor = 0x080808
 goldcolor = 0xFFDF00
 --      ***      --
--- Инициализация --
-holo = {}
-holo[1]= {}
-holo[1][1]= {}
+
+
+-- загружаем доп. оборудование
+function trytofind(name)
+  if com.isAvailable(name) then
+    return com.getPrimary(name)
+  else
+    return nil
+  end
+end
+
+local h = trytofind('hologram')
 
 -- ========================================= H O L O G R A P H I C S ========================================= --
-
+holo = {}
 function set(x, y, z, value)
   if holo[x] == nil then holo[x] = {} end
   if holo[x][y] == nil then holo[x][y] = {} end
@@ -200,20 +207,6 @@ function mainScreen()
   textboxesDraw()
   gpu.set(MENUX, HEIGHT-2, "Выход: 'Q' или ")
 end
-function drawHologram()
-   h.clear()
-   for x=1,#holo do
-      for y=1,#holo[x] do
-         for z=1,#holo[x][y] do
-            if holo[x][y][z] ~= nil
-              then
-                 h.set(x,y,z,holo[x][y][z])
-              end
-         end
-      end      
-   end
-
-end
 
 
 -- =============================================== L A Y E R S =============================================== --
@@ -363,6 +356,23 @@ function changeColor(rgb, value)
   return true
 end
 
+function drawHologram()
+  -- проверка на наличие проектора
+  if h ~= nil then
+    h.clear()
+    for x=1, HOLOW do
+      for y=1, HOLOH do
+        for z=1, HOLOW do
+          n = get(x,y,z)
+          if n ~= 0 then
+            h.set(x,y,z,n)
+          end
+        end
+      end      
+    end
+  end
+end
+
 
 -- ============================================ T E X T B O X E S ============================================ --
 Textbox = {}
@@ -446,6 +456,7 @@ buttonsNew(prevLayer, MENUX+1, 19, '-', infocolor, 5)
 buttonsNew(nextLayer, MENUX+7, 19, '+', infocolor, 5)
 buttonsNew(clearLayer, MENUX+1, 21, 'Очистить', infocolor, BUTTONW)
 buttonsNew(fillLayer, MENUX+2+BUTTONW, 21, 'Залить', infocolor, BUTTONW)
+buttonsNew(drawHologram, MENUX+1, 25, 'На голограмму', goldcolor, 15)
 tb_red = textboxesNew(changeRed, MENUX+5, 10, '255', WIDTH-MENUX-7)
 tb_green = textboxesNew(changeGreen, MENUX+5, 11, '0', WIDTH-MENUX-7)
 tb_blue = textboxesNew(changeBlue, MENUX+5, 12, '0', WIDTH-MENUX-7)
@@ -492,7 +503,7 @@ while running do
     end
   end
 
-drawColorCursor()
+  drawColorCursor()
 end
 
 -- завершение
