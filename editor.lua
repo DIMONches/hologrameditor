@@ -473,12 +473,8 @@ while running do
       end
     end
   end
-<<<<<<< HEAD
-       drawHologram()
-=======
 
-  drawColorCursor()
->>>>>>> 468a45dbc94ceaa0a9fc9af63b77d065f583d76a
+drawColorCursor()
 end
 
 -- завершение
