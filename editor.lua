@@ -4,6 +4,7 @@ local term = require('term')
 local fs = require('filesystem')
 local com = require('component')
 local gpu = com.gpu
+local h= com.hologram
 
 --   Константы   --
 HOLOH = 32
@@ -18,10 +19,13 @@ helpcolor = 0x00FF00
 graycolor = 0x080808
 goldcolor = 0xFFDF00
 --      ***      --
-
+-- Инициализация --
+holo = {}
+holo[1]= {}
+holo[1][1]= {}
 
 -- ========================================= H O L O G R A P H I C S ========================================= --
-holo = {}
+
 function set(x, y, z, value)
   if holo[x] == nil then holo[x] = {} end
   if holo[x][y] == nil then holo[x][y] = {} end
@@ -195,6 +199,20 @@ function mainScreen()
   buttonsDraw()
   textboxesDraw()
   gpu.set(MENUX, HEIGHT-2, "Выход: 'Q' или ")
+end
+function drawHologram()
+   h.clear()
+   for x=1,#holo do
+      for y=1,#holo[x] do
+         for z=1,#holo[x][y] do
+            if holo[x][y][z] ~= nil
+              then
+                 h.set(x,y,z,holo[x][y][z])
+              end
+         end
+      end      
+   end
+
 end
 
 
@@ -474,7 +492,7 @@ while running do
     end
   end
 
-  drawColorCursor()
+drawColorCursor()
 end
 
 -- завершение
