@@ -365,6 +365,7 @@ end
 
 function drawHologram()
   -- проверка на наличие проектора
+  h = trytofind('hologram')
   if h ~= nil then
     local depth = h.maxDepth()
     -- очищаем
