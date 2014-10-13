@@ -14,4 +14,4 @@ Program for OpenComputers mod (Minecraft)
 * * *
 ***Programming: NEO, Totoro***
 
-[ComputerCraft.ru](http://cmoputercraft.ru/forum/ "ComputerCraft Forum")
+[ComputerCraft.ru](http://computercraft.ru/forum/ "ComputerCraft Forum")
