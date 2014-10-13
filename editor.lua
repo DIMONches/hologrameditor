@@ -141,7 +141,19 @@ BUTTONW = 12
 function drawColorSelector()
   frame(MENUX, 3, WIDTH-2, 16, "[ Цвета ]")
   for i=0, 3 do
-    drawRect(MENUX+1+i*8, 5, colortable[i])
+    drawRect(MENUX+1+i*8, 5, hexcolortable[i])
+  end
+  gpu.set(MENUX+1, 10, "R:")
+  gpu.set(MENUX+1, 11, "G:")
+  gpu.set(MENUX+1, 12, "B:")
+end
+function drawColorCursor(force)
+  if brush.color*8 ~= brush.x then brush.x = brush.color*8 end
+  if force or brush.gx ~= brush.x then
+    gpu.set(MENUX+1+brush.gx, 8, "        ")
+    if brush.gx < brush.x then brush.gx = brush.gx + 1 end
+    if brush.gx > brush.x then brush.gx = brush.gx - 1 end
+    gpu.set(MENUX+1+brush.gx, 8, " -^--^- ")
   end
 end
 function drawLayerSelector()
@@ -157,9 +169,11 @@ function mainScreen()
   -- "холст"
   drawGrid(3,2)
   drawColorSelector()
+  drawColorCursor(true)
   drawLayerSelector()
   drawButtonsPanel()
   buttonsDraw()
+  textboxesDraw()
   gpu.set(MENUX, HEIGHT-2, "Выход: 'Q' или ")
 end
 
@@ -232,25 +246,135 @@ end
 -- ================================ B U T T O N S   F U N C T I O N A L I T Y ================================ --
 function exit() running = false end
 
+function rgb2hex(r,g,b)
+  return r*65536+g*256+b
+end
+
+function changeRed(value) return changeColor(1, value) end
+function changeGreen(value) return changeColor(2, value) end
+function changeBlue(value) return changeColor(3, value) end
+function changeColor(rgb, value)
+  if value == nil then return false end
+  n = tonumber(value)
+  if n == nil or n < 0 or n > 255 then return false end
+  -- сохраняем данные в таблицу
+  colortable[brush.color][rgb] = n
+  hexcolortable[brush.color] = 
+      rgb2hex(colortable[brush.color][1],
+              colortable[brush.color][2],
+              colortable[brush.color][3])
+  -- обновляем цвета на панельке
+  for i=0, 3 do
+    drawRect(MENUX+1+i*8, 5, hexcolortable[i])
+  end
+  return true
+end
+
+
+-- ============================================ T E X T B O X E S ============================================ --
+Textbox = {}
+Textbox.__index = Textbox
+function Textbox.new(func, x, y, value, width)
+  self = setmetatable({}, Textbox)
+
+  self.form = '>'
+  if width == nil then width = 10 end
+  for i=1, width-1 do
+    self.form = self.form..' '
+  end
+
+  self.func = func
+  self.value = tostring(value)
+
+  self.x = x; self.y = y
+  self.visible = true
+
+  return self
+end
+function Textbox:draw(content)
+  if self.visible then
+    if content then gpu.setBackground(graycolor) end
+    gpu.set(self.x, self.y, self.form)
+    if content then gpu.set(self.x+2, self.y, self.value) end
+    gpu.setBackground(backcolor)
+  end
+end
+function Textbox:click(x, y)
+  if self.visible then
+    if y == self.y then
+      if x >= self.x and x <= self.x+#self.form then
+        self:draw(false)
+        term.setCursor(self.x+2, self.y)
+        value = string.sub(term.read({self.value}), 1, -2)
+        if self.func(value) then
+          self.value = value
+        end
+        self:draw(true)
+        return true
+      end
+    end
+  end
+  return false
+end
+function Textbox:setValue(value)
+  self.value = tostring(value)
+end
+textboxes = {}
+function textboxesNew(func, x, y, value, width)
+  textbox = Textbox.new(func, x, y, value, width)
+  table.insert(textboxes, textbox)
+  return textbox
+end 
+function textboxesDraw()
+  for i=1, #textboxes do
+    textboxes[i]:draw(true)
+  end
+end
+function textboxesClick(x, y)
+  for i=1, #textboxes do
+    textboxes[i]:click(x, y)
+  end
+end
+
 
 -- =========================================== M A I N   C Y C L E =========================================== --
 -- инициализация
-colortable = {0xFF0000, 0x00FF00, 0x0066FF}
-colortable[0] = 0x000000
+hexcolortable = {0xFF0000, 0x00FF00, 0x0066FF}
+hexcolortable[0] = 0x000000
+colortable = {{255, 0, 0}, {0, 255, 0}, {0, 102, 255}}
+colortable[0] = {0, 0, 0}
+brush = {color = 1, x = 8, gx = 8}
 running = true
 
 buttonsNew(exit, WIDTH-BUTTONW-2, HEIGHT-2, 'Выход', errorcolor, BUTTONW)
+tb_red = textboxesNew(changeRed, MENUX+5, 10, '255', WIDTH-MENUX-7)
+tb_green = textboxesNew(changeGreen, MENUX+5, 11, '0', WIDTH-MENUX-7)
+tb_blue = textboxesNew(changeBlue, MENUX+5, 12, '0', WIDTH-MENUX-7)
 mainScreen()
 
 while running do
-  name, add, x, y = event.pull(1.0)
+  if brush.x ~= brush.gx then name, add, x, y = event.pull(0.02)
+  else name, add, x, y = event.pull(1.0) end
 
   if name == 'key_down' then 
     -- если нажата 'Q' - выходим
     if y == 16 then break end
   elseif name == 'touch' then
     buttonsClick(x, y)
+    textboxesClick(x, y)
+
+    -- выбор цвета
+    if x>MENUX+1 and x<MENUX+37 then
+      if y>4 and y<8 then
+        brush.color = math.floor((x-MENUX-1)/8)
+        tb_red:setValue(colortable[brush.color][1]); tb_red:draw(true)
+        tb_green:setValue(colortable[brush.color][2]); tb_green:draw(true)
+        tb_blue:setValue(colortable[brush.color][3]); tb_blue:draw(true)
+      end
+    end
   end
+
+  drawColorCursor()
 end
 
 -- завершение
