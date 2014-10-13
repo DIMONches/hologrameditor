@@ -22,10 +22,10 @@ goldcolor = 0xFFDF00
 
 -- ========================================= H O L O G R A P H I C S ========================================= --
 holo = {}
-function set(x, y, z, brush)
+function set(x, y, z, value)
   if holo[x] == nil then holo[x] = {} end
   if holo[x][y] == nil then holo[x][y] = {} end
-  holo[x][y][z] = brush
+  holo[x][y][z] = value
 end
 function get(x, y, z)
   if holo[x] ~= nil and holo[x][y] ~= nil and holo[x][y][z] ~= nil then 
@@ -117,6 +117,7 @@ for i=1, HOLOW/2 do
   strGrid = strGrid.."██  "
 end
 function drawGrid(x, y)
+  gpu.fill(x, y, HOLOW, HOLOW, ' ')
   gpu.setForeground(graycolor)
   for i=0, HOLOW-1 do
     gpu.set(x+(i%2)*2, y+i, strGrid)
@@ -157,17 +158,18 @@ function drawColorCursor(force)
   end
 end
 function drawLayerSelector()
-  frame(MENUX, 16, WIDTH-2, 21, "[ Слой ]")
+  frame(MENUX, 16, WIDTH-2, 23, "[ Слой ]")
+  gpu.set(MENUX+13, 18, "Уровень голограммы:")
 end
 function drawButtonsPanel()
-  frame(MENUX, 21, WIDTH-2, 32, "[ Управление ]")
+  frame(MENUX, 23, WIDTH-2, 34, "[ Управление ]")
 end
 
 function mainScreen()
   term.clear()
   frame(1,1, WIDTH, HEIGHT, "{ Hologram Editor }")
   -- "холст"
-  drawGrid(3,2)
+  drawLayer()
   drawColorSelector()
   drawColorCursor(true)
   drawLayerSelector()
@@ -175,6 +177,38 @@ function mainScreen()
   buttonsDraw()
   textboxesDraw()
   gpu.set(MENUX, HEIGHT-2, "Выход: 'Q' или ")
+end
+
+
+-- =============================================== L A Y E R S =============================================== --
+GRIDX = 3
+GRIDY = 2
+function drawLayer()
+  drawGrid(GRIDX, GRIDY)
+  for x=1, HOLOW do
+    for z=1, HOLOW do
+      n = get(x, layer, z)
+      if n ~= 0 then
+        gpu.setForeground(hexcolortable[n])
+        gpu.set((GRIDX-2) + x*2, (GRIDY-1) + z, "██")
+      end
+    end
+  end
+  gpu.setForeground(forecolor)
+end
+function fillLayer()
+  for x=1, HOLOW do
+    for z=1, HOLOW do
+      set(x, layer, z, brush.color)
+    end
+  end
+  drawLayer()
+end
+function clearLayer()
+  for x=1, HOLOW do
+    if holo[x] ~= nil then holo[x][layer] = nil end
+  end
+  drawLayer()
 end
 
 
@@ -245,6 +279,29 @@ end
 
 -- ================================ B U T T O N S   F U N C T I O N A L I T Y ================================ --
 function exit() running = false end
+function nextLayer()
+  if layer < HOLOH then 
+    layer = layer + 1
+    tb_layer:setValue(layer)
+    tb_layer:draw(true)
+    drawLayer()
+  end
+end
+function prevLayer()
+  if layer > 1 then 
+    layer = layer - 1 
+    tb_layer:setValue(layer)
+    tb_layer:draw(true)
+    drawLayer()
+  end
+end
+function setLayer(value)
+  n = tonumber(value)
+  if n == nil or n < 1 or n > HOLOH then return false end
+  layer = n
+  drawLayer()
+  return true
+end
 
 function rgb2hex(r,g,b)
   return r*65536+g*256+b
@@ -344,17 +401,24 @@ hexcolortable[0] = 0x000000
 colortable = {{255, 0, 0}, {0, 255, 0}, {0, 102, 255}}
 colortable[0] = {0, 0, 0}
 brush = {color = 1, x = 8, gx = 8}
+layer = 1
 running = true
 
 buttonsNew(exit, WIDTH-BUTTONW-2, HEIGHT-2, 'Выход', errorcolor, BUTTONW)
+buttonsNew(drawLayer, MENUX+1, 14, 'Обновить', goldcolor, BUTTONW)
+buttonsNew(prevLayer, MENUX+1, 19, '-', infocolor, 5)
+buttonsNew(nextLayer, MENUX+7, 19, '+', infocolor, 5)
+buttonsNew(clearLayer, MENUX+1, 21, 'Очистить', infocolor, BUTTONW)
+buttonsNew(fillLayer, MENUX+2+BUTTONW, 21, 'Залить', infocolor, BUTTONW)
 tb_red = textboxesNew(changeRed, MENUX+5, 10, '255', WIDTH-MENUX-7)
 tb_green = textboxesNew(changeGreen, MENUX+5, 11, '0', WIDTH-MENUX-7)
 tb_blue = textboxesNew(changeBlue, MENUX+5, 12, '0', WIDTH-MENUX-7)
+tb_layer = textboxesNew(setLayer, MENUX+13, 19, '1', WIDTH-MENUX-15)
 mainScreen()
 
 while running do
-  if brush.x ~= brush.gx then name, add, x, y = event.pull(0.02)
-  else name, add, x, y = event.pull(1.0) end
+  if brush.x ~= brush.gx then name, add, x, y, b = event.pull(0.02)
+  else name, add, x, y, b = event.pull(1.0) end
 
   if name == 'key_down' then 
     -- если нажата 'Q' - выходим
@@ -370,6 +434,24 @@ while running do
         tb_red:setValue(colortable[brush.color][1]); tb_red:draw(true)
         tb_green:setValue(colortable[brush.color][2]); tb_green:draw(true)
         tb_blue:setValue(colortable[brush.color][3]); tb_blue:draw(true)
+      end
+    end
+  end
+  if name == 'touch' or name == 'drag' then
+    -- "рисование"
+    if x>=GRIDX and x<GRIDX+HOLOW*2 then
+      if y>=GRIDY and y<GRIDY+HOLOW then
+        dx = math.floor((x-GRIDX)/2)+1
+        dy = y-GRIDY+1
+        if b == 0 then
+          set(dx, layer, dy, brush.color)
+          gpu.setForeground(hexcolortable[brush.color])
+        else
+          set(dx, layer, dy, 0)
+          gpu.setForeground(hexcolortable[0])
+        end
+        gpu.set((GRIDX-2) + dx*2, (GRIDY-1) + dy, "██")
+        gpu.setForeground(forecolor)
       end
     end
   end
