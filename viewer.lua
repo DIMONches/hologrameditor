@@ -44,13 +44,13 @@ function changeColor(rgb, value)
   end
   return true
 end
-end
+
 -- рисование голограммы на проэкторе
 function draw()
 	for x=1,HOLOW do
 		for y=1,HOLOH do
 			for z=1,HOLOW do
-				if holo[x][y][z] == nil then error("array holo = nil ,fill it")
+				if holo[x][y][z] == nil then error("array holo = nil ,fill it") end
 				h.set(x,y,z,holo[x][y][z])
 			end
 		end
