@@ -589,3 +589,5 @@ end
 -- завершение
 term.clear()
 gpu.setResolution(OLDWIDTH, OLDHEIGHT)
+gpu.setForeground(0xFFFFFF)
+gpu.setBackground(0x000000)
