@@ -1,4 +1,4 @@
-HologramEditor v0.0 Alpha
+HologramEditor v0.51 Alpha
 ---
 Program for OpenComputers mod (Minecraft)
 
