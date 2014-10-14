@@ -5,7 +5,7 @@ local fs= require("filesystem")
 -- загрузка оборудование--
 local h= c.hologram
 
--- создание и инициализация перемменых--
+-- создание и инициализация переменных--
 HOLOH = 32
 HOLOW = 48
 backcolor = 0x000000
