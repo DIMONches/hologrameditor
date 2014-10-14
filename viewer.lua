@@ -116,9 +116,11 @@ end
 -- главная функция
 
 function main()
-
-   loadfile(nil)
-   draw()
-
+   args= {...}
+   if fs.exists(arg[1])
+   then 
+      loadfile(args[1])
+      draw()
+   end
 end
 main()
