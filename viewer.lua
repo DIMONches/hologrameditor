@@ -67,7 +67,10 @@ function draw()
 	for x=1,HOLOW do
 		for y=1,HOLOH do
 			for z=1,HOLOW do
-				h.set(x,y,z,get(x,y,z))
+			           if get(x,y,z)~= 0
+                                   then
+				      h.set(x,y,z,get(x,y,z))
+                                   end
 			end
 		end
 	end
