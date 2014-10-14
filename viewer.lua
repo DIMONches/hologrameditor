@@ -17,6 +17,7 @@ graycolor = 0x080808
 goldcolor = 0xFFDF00
 
 holo= {}
+colortable= {}
 
 -- технические функции
 
