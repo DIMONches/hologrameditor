@@ -44,7 +44,7 @@ function changeColor(rgb, value)
   end
   return true
 end
-
+end
 -- рисование голограммы на проэкторе
 function draw()
 	for x=1,HOLOW do
