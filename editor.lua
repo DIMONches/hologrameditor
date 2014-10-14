@@ -1,3 +1,7 @@
+--         Hologram Editor
+-- by NEO, Totoro
+-- 10/14/2014, all right reserved =)
+
 local unicode = require('unicode')
 local event = require('event')
 local term = require('term')
@@ -208,7 +212,7 @@ function mainScreen()
   -- "about" - коротко о создателях
   gpu.setForeground(infocolor)
   gpu.setBackground(graycolor)
-  gpu.set(MENUX+3, HEIGHT-13, " Hologram Editor v0.51 Alpha ")
+  gpu.set(MENUX+3, HEIGHT-13, " Hologram Editor v0.55 Alpha ")
   gpu.setForeground(forecolor)
   gpu.set(MENUX+3, HEIGHT-12, "            * * *            ")
   gpu.set(MENUX+3, HEIGHT-11, " Программисты:               ")
@@ -417,18 +421,25 @@ end
 function saveHologram()
   local filename = tb_file:getValue()
   if filename ~= FILE_REQUEST then
+    -- выводим предупреждение
+    showMessage('Файл сохраняется...', '[ Внимание ]', goldcolor)
     -- добавляем фирменное расширение =)
     if string.sub(filename, -3) ~= '.3d' then
       filename = filename..'.3d'
     end
     -- сохраняем
     save(filename)
+    -- выводим предупреждение
+    showMessage('   Файл сохранен!  ', '[ Завершено ]', goldcolor)
+    repaint = true
   end
 end
 
 function loadHologram()
   local filename = tb_file:getValue()
   if filename ~= FILE_REQUEST then
+    -- выводим предупреждение
+    showMessage('Файл загружается...', '[ Внимание ]', goldcolor)
     -- добавляем фирменное расширение =)
     if string.sub(filename, -3) ~= '.3d' then
       filename = filename..'.3d'
@@ -513,6 +524,19 @@ function textboxesClick(x, y)
 end
 
 
+-- ============================================= M E S S A G E S ============================================= --
+repaint = false
+function showMessage(text, caption, color)
+  local x = WIDTH/2 - unicode.len(text)/2 - 4
+  local y = HEIGHT/2 - 2
+  gpu.fill(x, y, unicode.len(text)+8, 5, ' ')
+  frame(x, y, x+unicode.len(text)+7, y+4, caption)
+  gpu.setForeground(color)
+  gpu.set(x+4,y+2, text)
+  gpu.setForeground(forecolor)
+end
+
+
 -- =========================================== M A I N   C Y C L E =========================================== --
 -- инициализация
 hexcolortable = {0xFF0000, 0x00FF00, 0x0066FF}
@@ -568,6 +592,9 @@ while running do
     -- "рисование"
     if x>=GRIDX and x<GRIDX+HOLOW*2 then
       if y>=GRIDY and y<GRIDY+HOLOW then
+        -- перерисуем, если на экране был мессейдж
+        if repaint then drawLayer(); repaint = false end
+        -- рассчет клика
         dx = math.floor((x-GRIDX)/2)+1
         dy = y-GRIDY+1
         if b == 0 then
