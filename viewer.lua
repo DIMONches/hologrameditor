@@ -8,10 +8,43 @@ local h= c.hologram
 -- создание и инициализация перемменых--
 HOLOH = 32
 HOLOW = 48
+backcolor = 0x000000
+forecolor = 0xFFFFFF
+infocolor = 0x0066FF
+errorcolor = 0xFF0000
+helpcolor = 0x006600
+graycolor = 0x080808
+goldcolor = 0xFFDF00
 
 holo= {}
 holo[1]= {}
 holo[1][1]= {}
+
+-- преобразование цветов
+
+function rgb2hex(r,g,b)
+  return r*65536+g*256+b
+end
+function changeRed(value) return changeColor(1, value) end
+function changeGreen(value) return changeColor(2, value) end
+function changeBlue(value) return changeColor(3, value) end
+function changeColor(rgb, value)
+  if value == nil then return false end
+  n = tonumber(value)
+  if n == nil or n < 0 or n > 255 then return false end
+  -- сохраняем данные в таблицу
+  colortable[brush.color][rgb] = n
+  hexcolortable[brush.color] = 
+      rgb2hex(colortable[brush.color][1],
+              colortable[brush.color][2],
+              colortable[brush.color][3])
+  -- обновляем цвета на панельке
+  for i=0, 3 do
+    drawRect(MENUX+1+i*8, 5, hexcolortable[i])
+  end
+  return true
+end
+
 -- рисование голограммы на проэкторе
 function draw()
 	for x=1,HOLOW do
@@ -62,6 +95,7 @@ function load(filename)
     error("[ОШИБКА] Файл "..filename.." не найден.")
   end
 end
+
 
 -- главная функция
 
