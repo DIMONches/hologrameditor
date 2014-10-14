@@ -20,14 +20,31 @@ holo= {}
 holo[1]= {}
 holo[1][1]= {}
 
--- преобразование цветов
+-- технические функции
 
-function rgb2hex(r,g,b)
-  return r*65536+g*256+b
+function get(x, y, z)
+  if holo[x] ~= nil and holo[x][y] ~= nil and holo[x][y][z] ~= nil then 
+    return holo[x][y][z]
+  else
+    return 0
+  end
 end
+
+function set(x, y, z, value)
+  if holo[x] == nil then holo[x] = {} end
+  if holo[x][y] == nil then holo[x][y] = {} end
+  holo[x][y][z] = value
+end
+
+-- преобразование цветов
 function changeRed(value) return changeColor(1, value) end
 function changeGreen(value) return changeColor(2, value) end
 function changeBlue(value) return changeColor(3, value) end
+function rgb2hex(r,g,b)
+  return r*65536+g*256+b
+end
+
+
 function changeColor(rgb, value)
   if value == nil then return false end
   n = tonumber(value)
@@ -50,8 +67,8 @@ function draw()
 	for x=1,HOLOW do
 		for y=1,HOLOH do
 			for z=1,HOLOW do
-				if holo[x][y][z] == nil then error("array holo = nil ,fill it")
-				h.set(x,y,z,holo[x][y][z])
+				
+				h.set(x,y,z,get(x,y,z))
 			end
 		end
 	end
@@ -84,7 +101,7 @@ function load(filename)
           for i=0, 3 do
             a = byte % 4
             byte = math.floor(byte / 4)
-            if a ~= 0 then holo[x][y][z+i]= a end
+            if a ~= 0 then set(x,y,z+i,a) end
           end
         end
       end
