@@ -411,6 +411,7 @@ function nextGhost()
     if ghost_layer < limit then
       ghost_layer = layer + 1
     else ghost_layer = limit end
+    drawLayer()
   else  
     if ghost_layer < limit then
       ghost_layer = ghost_layer + 1 
@@ -424,6 +425,7 @@ function prevGhost()
     if layer > 1 then
       ghost_layer = layer - 1
     else ghost_layer = 1 end
+    drawLayer()
   else
     if ghost_layer > 1 then
       ghost_layer = ghost_layer - 1
@@ -504,7 +506,7 @@ function drawHologram()
     -- очищаем
     h.clear()
     -- отправляем палитру
-    if depth == 3 then
+    if depth == 2 then
       for i=1, 3 do
         h.setPaletteColor(i, hexcolortable[i])
       end
@@ -517,7 +519,7 @@ function drawHologram()
         for z=1, HOLOW do
           n = get(x,y,z)
           if n ~= 0 then
-            if depth == 3 then
+            if depth == 2 then
               h.set(x,y,z,n)
             else
               h.set(x,y,z,1)
