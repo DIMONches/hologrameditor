@@ -150,12 +150,17 @@ for i=1, HOLOW/2 do
   strGrid = strGrid.."██  "
 end
 function drawGrid(x, y)
-  gpu.fill(x, y, HOLOW, HOLOW, ' ')
+  gpu.fill(0, y, MENUX, HOLOW, ' ')
   gpu.setForeground(graycolor)
   for i=0, HOLOW-1 do
+    if view>0 and i==HOLOH then 
+      gpu.setForeground(forecolor)
+      line(1, MENUX-1, y+HOLOH)
+      break
+    end
     gpu.set(x+(i%2)*2, y+i, strGrid)
   end
-  gpu.setForeground(forecolor)
+  if view == 0 then gpu.setForeground(forecolor) end
 end
 
 -- рисуем цветной прямоугольник
@@ -191,11 +196,12 @@ function drawColorCursor(force)
   end
 end
 function drawLayerSelector()
-  frame(MENUX, 16, WIDTH-2, 23, "[ Слой ]")
+  frame(MENUX, 16, WIDTH-2, 28, "[ Слой ]")
   gpu.set(MENUX+13, 18, "Уровень голограммы:")
+  
 end
 function drawButtonsPanel()
-  frame(MENUX, 23, WIDTH-2, 34, "[ Управление ]")
+  frame(MENUX, 28, WIDTH-2, 36, "[ Управление ]")
 end
 
 function mainScreen()
@@ -212,14 +218,14 @@ function mainScreen()
   -- "about" - коротко о создателях
   gpu.setForeground(infocolor)
   gpu.setBackground(graycolor)
-  gpu.set(MENUX+3, HEIGHT-13, " Hologram Editor v0.55 Alpha ")
+  gpu.set(MENUX+3, HEIGHT-11, " Hologram Editor v0.55 Alpha ")
   gpu.setForeground(forecolor)
-  gpu.set(MENUX+3, HEIGHT-12, "            * * *            ")
-  gpu.set(MENUX+3, HEIGHT-11, " Программисты:               ")
-  gpu.set(MENUX+3, HEIGHT-10, "         NEO, Totoro         ")
-  gpu.set(MENUX+3, HEIGHT-9,  "            * * *            ")
-  gpu.set(MENUX+3, HEIGHT-8,  " Контакт:                    ")
-  gpu.set(MENUX+3, HEIGHT-7,  "   computercraft.ru/forum    ")
+  gpu.set(MENUX+3, HEIGHT-10, "            * * *            ")
+  gpu.set(MENUX+3, HEIGHT-9,  " Программисты:               ")
+  gpu.set(MENUX+3, HEIGHT-8,  "         NEO, Totoro         ")
+  gpu.set(MENUX+3, HEIGHT-7,  "            * * *            ")
+  gpu.set(MENUX+3, HEIGHT-6,  " Контакт:                    ")
+  gpu.set(MENUX+3, HEIGHT-5,  "   computercraft.ru/forum    ")
   gpu.setBackground(backcolor)
   -- выход
   gpu.set(MENUX, HEIGHT-2, "Выход: 'Q' или ")
@@ -231,12 +237,37 @@ GRIDX = 3
 GRIDY = 2
 function drawLayer()
   drawGrid(GRIDX, GRIDY)
-  for x=1, HOLOW do
+  -- вид сверху (y)
+  if view == 0 then
+    for x=1, HOLOW do
+      for z=1, HOLOW do
+        n = get(x, layer, z)
+        if n ~= 0 then
+          gpu.setForeground(hexcolortable[n])
+          gpu.set((GRIDX-2) + x*2, (GRIDY-1) + z, "██")
+        end
+      end
+    end
+  -- вид спереди (z)
+  elseif view == 1 then
+    for x=1, HOLOW do
+      for y=1, HOLOH do
+        n = get(x, y, layer)
+        if n ~= 0 then
+          gpu.setForeground(hexcolortable[n])
+          gpu.set((GRIDX-2) + x*2, (GRIDY+HOLOH) - y, "██")
+        end
+      end
+    end
+  -- вид сбоку (x)
+  else
     for z=1, HOLOW do
-      n = get(x, layer, z)
-      if n ~= 0 then
-        gpu.setForeground(hexcolortable[n])
-        gpu.set((GRIDX-2) + x*2, (GRIDY-1) + z, "██")
+      for y=1, HOLOH do
+        n = get(layer, y, z)
+        if n ~= 0 then
+          gpu.setForeground(hexcolortable[n])
+          gpu.set((GRIDX+HOLOW*2) - z*2, (GRIDY+HOLOH) - y, "██")
+        end
       end
     end
   end
@@ -326,6 +357,10 @@ end
 -- ================================ B U T T O N S   F U N C T I O N A L I T Y ================================ --
 function exit() running = false end
 function nextLayer()
+  -- ограничения разные для разных видов/проекций
+  local limit = HOLOH
+  if view > 0 then limit = HOLOW end
+
   if layer < HOLOH then 
     layer = layer + 1
     tb_layer:setValue(layer)
@@ -379,6 +414,15 @@ function changeColor(rgb, value)
   end
   return true
 end
+
+function setTopView() 
+  view = 0 
+  -- в виде сверху меньше слоев
+  if layer > HOLOH then layer = HOLOH end
+  drawLayer()
+end
+function setFrontView() view = 1; drawLayer() end
+function setSideView() view = 2; drawLayer() end
 
 function drawHologram()
   -- проверка на наличие проектора
@@ -446,6 +490,10 @@ function loadHologram()
     end
     -- загружаем
     load(filename)
+    -- обновляем значения в текстбоксах
+    tb_red:setValue(colortable[brush.color][1]); tb_red:draw(true)
+    tb_green:setValue(colortable[brush.color][2]); tb_green:draw(true)
+    tb_blue:setValue(colortable[brush.color][3]); tb_blue:draw(true)
     -- обновляем цвета на панельке
     for i=0, 3 do
       drawRect(MENUX+1+i*8, 5, hexcolortable[i])
@@ -545,26 +593,31 @@ colortable = {{255, 0, 0}, {0, 255, 0}, {0, 102, 255}}
 colortable[0] = {0, 0, 0}
 brush = {color = 1, x = 8, gx = 8}
 layer = 1
+view = 0
 running = true
 
 buttonsNew(exit, WIDTH-BUTTONW-2, HEIGHT-2, 'Выход', errorcolor, BUTTONW)
-buttonsNew(drawLayer, MENUX+1, 14, 'Обновить', goldcolor, BUTTONW)
+buttonsNew(drawLayer, MENUX+10, 14, 'Обновить', goldcolor, BUTTONW)
 buttonsNew(prevLayer, MENUX+1, 19, '-', infocolor, 5)
 buttonsNew(nextLayer, MENUX+7, 19, '+', infocolor, 5)
-buttonsNew(clearLayer, MENUX+1, 21, 'Очистить', infocolor, BUTTONW)
-buttonsNew(fillLayer, MENUX+2+BUTTONW, 21, 'Залить', infocolor, BUTTONW)
-buttonsNew(drawHologram, MENUX+8, 25, 'На проектор', goldcolor, 16)
+buttonsNew(setTopView, MENUX+1, 21, 'Сверху', infocolor, 10)
+buttonsNew(setFrontView, MENUX+12, 21, 'Спереди', infocolor, 10)
+buttonsNew(setSideView, MENUX+24, 21, 'Сбоку', infocolor, 9)
 
-buttonsNew(saveHologram, MENUX+1, 28, 'Сохранить', helpcolor, BUTTONW)
-buttonsNew(loadHologram, MENUX+8+BUTTONW, 28, 'Загрузить', infocolor, BUTTONW)
-buttonsNew(newHologram, MENUX+1, 30, 'Новый файл', infocolor, BUTTONW)
+buttonsNew(clearLayer, MENUX+1, 26, 'Очистить', infocolor, BUTTONW)
+buttonsNew(fillLayer, MENUX+2+BUTTONW, 26, 'Залить', infocolor, BUTTONW)
+
+buttonsNew(drawHologram, MENUX+8, 30, 'На проектор', goldcolor, 16)
+buttonsNew(saveHologram, MENUX+1, 33, 'Сохранить', helpcolor, BUTTONW)
+buttonsNew(loadHologram, MENUX+8+BUTTONW, 33, 'Загрузить', infocolor, BUTTONW)
+buttonsNew(newHologram, MENUX+1, 35, 'Новый файл', infocolor, BUTTONW)
 
 tb_red = textboxesNew(changeRed, MENUX+5, 10, '255', WIDTH-MENUX-7)
 tb_green = textboxesNew(changeGreen, MENUX+5, 11, '0', WIDTH-MENUX-7)
 tb_blue = textboxesNew(changeBlue, MENUX+5, 12, '0', WIDTH-MENUX-7)
 tb_layer = textboxesNew(setLayer, MENUX+13, 19, '1', WIDTH-MENUX-15)
 FILE_REQUEST = 'Введите сюда имя файла'
-tb_file = textboxesNew(setFilename, MENUX+1, 27, FILE_REQUEST, WIDTH-MENUX-3)
+tb_file = textboxesNew(setFilename, MENUX+1, 32, FILE_REQUEST, WIDTH-MENUX-3)
 mainScreen()
 
 while running do
@@ -590,21 +643,35 @@ while running do
   end
   if name == 'touch' or name == 'drag' then
     -- "рисование"
-    if x>=GRIDX and x<GRIDX+HOLOW*2 then
-      if y>=GRIDY and y<GRIDY+HOLOW then
+    local limit = HOLOW
+    if view > 0 then limit = HOLOH end
+    if x >= GRIDX and x < GRIDX+HOLOW*2 then
+      if y >= GRIDY and y < GRIDY+limit then
         -- перерисуем, если на экране был мессейдж
         if repaint then drawLayer(); repaint = false end
         -- рассчет клика
-        dx = math.floor((x-GRIDX)/2)+1
-        dy = y-GRIDY+1
+        if view == 0 then
+          dx = math.floor((x-GRIDX)/2)+1
+          dy = layer
+          dz = y-GRIDY+1
+        elseif view == 1 then
+          dx = math.floor((x-GRIDX)/2)+1
+          dy = HOLOH - (y-GRIDY)
+          dz = layer
+        else
+          dx = layer
+          dy = HOLOH - (y-GRIDY)
+          dz = HOLOW - math.floor((x-GRIDX)/2)
+        end
         if b == 0 then
-          set(dx, layer, dy, brush.color)
+          set(dx, dy, dz, brush.color)
           gpu.setForeground(hexcolortable[brush.color])
         else
-          set(dx, layer, dy, 0)
+          set(dx, dy, dz, 0)
           gpu.setForeground(hexcolortable[0])
         end
-        gpu.set((GRIDX-2) + dx*2, (GRIDY-1) + dy, "██")
+        --gpu.set((GRIDX-2) + dx*2, (GRIDY-1) + dy, "██")
+        gpu.set(x-(x-GRIDX)%2, y, "██")
         gpu.setForeground(forecolor)
       end
     end
