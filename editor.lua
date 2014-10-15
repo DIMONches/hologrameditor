@@ -82,10 +82,9 @@ function load(filename)
       for c=1, 3 do
         colortable[i][c] = string.byte(file:read(1))
       end
-      hexcolortable[i] = 
-        rgb2hex(colortable[i][1],
-                colortable[i][2],
-                colortable[i][3])
+      setHexColor(i,colortable[i][1],
+                    colortable[i][2],
+                    colortable[i][3])
     end
     -- загружаем массив
     holo = {}
@@ -198,7 +197,7 @@ end
 function drawLayerSelector()
   frame(MENUX, 16, WIDTH-2, 28, "[ Слой ]")
   gpu.set(MENUX+13, 18, "Уровень голограммы:")
-  
+  gpu.set(MENUX+1, 23, "Направляющий уровень:")
 end
 function drawButtonsPanel()
   frame(MENUX, 28, WIDTH-2, 36, "[ Управление ]")
@@ -241,7 +240,12 @@ function drawLayer()
   if view == 0 then
     for x=1, HOLOW do
       for z=1, HOLOW do
+        gn = get(x, ghost_layer, z)
         n = get(x, layer, z)
+        if n == 0 and gn ~= 0 then
+          gpu.setForeground(darkhexcolors[gn])
+          gpu.set((GRIDX-2) + x*2, (GRIDY-1) + z, "░░")
+        end
         if n ~= 0 then
           gpu.setForeground(hexcolortable[n])
           gpu.set((GRIDX-2) + x*2, (GRIDY-1) + z, "██")
@@ -253,6 +257,11 @@ function drawLayer()
     for x=1, HOLOW do
       for y=1, HOLOH do
         n = get(x, y, layer)
+        gn = get(x, y, ghost_layer)
+        if n == 0 and gn ~= 0 then
+          gpu.setForeground(darkhexcolors[gn])
+          gpu.set((GRIDX-2) + x*2, (GRIDY+HOLOH) - y, "░░")
+        end
         if n ~= 0 then
           gpu.setForeground(hexcolortable[n])
           gpu.set((GRIDX-2) + x*2, (GRIDY+HOLOH) - y, "██")
@@ -263,7 +272,12 @@ function drawLayer()
   else
     for z=1, HOLOW do
       for y=1, HOLOH do
+        gn = get(ghost_layer, y, z)
         n = get(layer, y, z)
+        if n == 0 and gn ~= 0 then
+          gpu.setForeground(darkhexcolors[gn])
+          gpu.set((GRIDX+HOLOW*2) - z*2, (GRIDY+HOLOH) - y, "░░")
+        end
         if n ~= 0 then
           gpu.setForeground(hexcolortable[n])
           gpu.set((GRIDX+HOLOW*2) - z*2, (GRIDY+HOLOH) - y, "██")
@@ -361,10 +375,11 @@ function nextLayer()
   local limit = HOLOH
   if view > 0 then limit = HOLOW end
 
-  if layer < HOLOH then 
+  if layer < limit then 
     layer = layer + 1
     tb_layer:setValue(layer)
     tb_layer:draw(true)
+    moveGhost()
     drawLayer()
   end
 end
@@ -373,15 +388,68 @@ function prevLayer()
     layer = layer - 1 
     tb_layer:setValue(layer)
     tb_layer:draw(true)
+    moveGhost()
     drawLayer()
   end
 end
 function setLayer(value)
-  n = tonumber(value)
-  if n == nil or n < 1 or n > HOLOH then return false end
+  local n = tonumber(value)
+  local limit = HOLOH
+  if view > 0 then limit = HOLOW end
+  if n == nil or n < 1 or n > limit then return false end
   layer = n
+  moveGhost()
   drawLayer()
   return true
+end
+function nextGhost()
+  local limit = HOLOH
+  if view > 0 then limit = HOLOW end
+  
+  if ghost_layer_below then
+    ghost_layer_below = false
+    if ghost_layer < limit then
+      ghost_layer = layer + 1
+    else ghost_layer = limit end
+  else  
+    if ghost_layer < limit then
+      ghost_layer = ghost_layer + 1 
+      drawLayer()
+    end
+  end
+end
+function prevGhost()
+  if not ghost_layer_below then
+    ghost_layer_below = true
+    if layer > 1 then
+      ghost_layer = layer - 1
+    else ghost_layer = 1 end
+  else
+    if ghost_layer > 1 then
+      ghost_layer = ghost_layer - 1
+      drawLayer()
+    end
+  end
+end
+function setGhostLayer(value)
+  local n = tonumber(value)
+  local limit = HOLOH
+  if view > 0 then limit = HOLOW end
+  if n == nil or n < 1 or n > limit then return false end
+  ghost_layer = n
+  drawLayer()
+  return true
+end
+function moveGhost()
+  if ghost_layer_below then
+    if layer > 1 then ghost_layer = layer - 1
+    else ghost_layer = 1 end
+  else
+    local limit = HOLOH
+    if view > 0 then limit = HOLOW end
+    if layer < limit then ghost_layer = layer + 1
+    else ghost_layer = limit end
+  end
 end
 
 function setFilename(str)
@@ -392,6 +460,11 @@ function setFilename(str)
   end
 end
 
+function setHexColor(n, r, g, b)
+  local hexcolor = rgb2hex(r,g,b)
+  hexcolortable[n] = hexcolor
+  darkhexcolors[n] = bit32.rshift(bit32.band(hexcolor, 0xfefefe), 1)
+end
 function rgb2hex(r,g,b)
   return r*65536+g*256+b
 end
@@ -404,10 +477,9 @@ function changeColor(rgb, value)
   if n == nil or n < 0 or n > 255 then return false end
   -- сохраняем данные в таблицу
   colortable[brush.color][rgb] = n
-  hexcolortable[brush.color] = 
-      rgb2hex(colortable[brush.color][1],
-              colortable[brush.color][2],
-              colortable[brush.color][3])
+  setHexColor(brush.color, colortable[brush.color][1],
+                           colortable[brush.color][2],
+                           colortable[brush.color][3])
   -- обновляем цвета на панельке
   for i=0, 3 do
     drawRect(MENUX+1+i*8, 5, hexcolortable[i])
@@ -587,11 +659,14 @@ end
 
 -- =========================================== M A I N   C Y C L E =========================================== --
 -- инициализация
-hexcolortable = {0xFF0000, 0x00FF00, 0x0066FF}
-hexcolortable[0] = 0x000000
 colortable = {{255, 0, 0}, {0, 255, 0}, {0, 102, 255}}
 colortable[0] = {0, 0, 0}
+hexcolortable = {}
+darkhexcolors = {}
+for i=0,3 do setHexColor(i, colortable[i][1], colortable[i][2], colortable[i][3]) end
 brush = {color = 1, x = 8, gx = 8}
+ghost_layer = 1
+ghost_layer_below = true
 layer = 1
 view = 0
 running = true
@@ -603,6 +678,9 @@ buttonsNew(nextLayer, MENUX+7, 19, '+', infocolor, 5)
 buttonsNew(setTopView, MENUX+1, 21, 'Сверху', infocolor, 10)
 buttonsNew(setFrontView, MENUX+12, 21, 'Спереди', infocolor, 10)
 buttonsNew(setSideView, MENUX+24, 21, 'Сбоку', infocolor, 9)
+
+buttonsNew(prevGhost, MENUX+1, 24, 'Ниже', infocolor, 6)
+buttonsNew(nextGhost, MENUX+10, 24, 'Выше', infocolor, 6)
 
 buttonsNew(clearLayer, MENUX+1, 26, 'Очистить', infocolor, BUTTONW)
 buttonsNew(fillLayer, MENUX+2+BUTTONW, 26, 'Залить', infocolor, BUTTONW)
@@ -616,6 +694,7 @@ tb_red = textboxesNew(changeRed, MENUX+5, 10, '255', WIDTH-MENUX-7)
 tb_green = textboxesNew(changeGreen, MENUX+5, 11, '0', WIDTH-MENUX-7)
 tb_blue = textboxesNew(changeBlue, MENUX+5, 12, '0', WIDTH-MENUX-7)
 tb_layer = textboxesNew(setLayer, MENUX+13, 19, '1', WIDTH-MENUX-15)
+tb_ghostlayer = textboxesNew(setGhostLayer, MENUX+19, 24, ' ', WIDTH-MENUX-21)
 FILE_REQUEST = 'Введите сюда имя файла'
 tb_file = textboxesNew(setFilename, MENUX+1, 32, FILE_REQUEST, WIDTH-MENUX-3)
 mainScreen()
@@ -651,27 +730,27 @@ while running do
         if repaint then drawLayer(); repaint = false end
         -- рассчет клика
         if view == 0 then
-          dx = math.floor((x-GRIDX)/2)+1
-          dy = layer
-          dz = y-GRIDY+1
+          dx = math.floor((x-GRIDX)/2)+1; gx = dx
+          dy = layer; gy = ghost_layer
+          dz = y-GRIDY+1; gz = dz
         elseif view == 1 then
-          dx = math.floor((x-GRIDX)/2)+1
-          dy = HOLOH - (y-GRIDY)
-          dz = layer
+          dx = math.floor((x-GRIDX)/2)+1; gx = dx
+          dy = HOLOH - (y-GRIDY); gy = dy
+          dz = layer; gz = ghost_layer
         else
-          dx = layer
-          dy = HOLOH - (y-GRIDY)
-          dz = HOLOW - math.floor((x-GRIDX)/2)
+          dx = layer; gx = ghost_layer
+          dy = HOLOH - (y-GRIDY); gy = dy
+          dz = HOLOW - math.floor((x-GRIDX)/2); gz = dz
         end
-        if b == 0 then
+        if b == 0 and brush.color ~= 0 then
           set(dx, dy, dz, brush.color)
           gpu.setForeground(hexcolortable[brush.color])
+          gpu.set(x-(x-GRIDX)%2, y, "██")
         else
           set(dx, dy, dz, 0)
-          gpu.setForeground(hexcolortable[0])
+          gpu.setForeground(darkhexcolors[get(gx,gy,gz)])
+          gpu.set(x-(x-GRIDX)%2, y, "░░")
         end
-        --gpu.set((GRIDX-2) + dx*2, (GRIDY-1) + dy, "██")
-        gpu.set(x-(x-GRIDX)%2, y, "██")
         gpu.setForeground(forecolor)
       end
     end
