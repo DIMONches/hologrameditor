@@ -217,7 +217,7 @@ function mainScreen()
   -- "about" - коротко о создателях
   gpu.setForeground(infocolor)
   gpu.setBackground(graycolor)
-  gpu.set(MENUX+3, HEIGHT-11, " Hologram Editor v0.55 Alpha ")
+  gpu.set(MENUX+3, HEIGHT-11, " Hologram Editor v0.60 Beta  ")
   gpu.setForeground(forecolor)
   gpu.set(MENUX+3, HEIGHT-10, "            * * *            ")
   gpu.set(MENUX+3, HEIGHT-9,  " Программисты:               ")
