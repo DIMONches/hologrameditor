@@ -286,6 +286,8 @@ function drawLayer()
     end
   end
   gpu.setForeground(forecolor)
+  -- for messages
+  repaint = false
 end
 function fillLayer()
   for x=1, HOLOW do
@@ -487,6 +489,13 @@ function changeColor(rgb, value)
     drawRect(MENUX+1+i*8, 5, hexcolortable[i])
   end
   return true
+end
+
+function moveSelector(num)
+  brush.color = num
+  tb_red:setValue(colortable[num][1]); tb_red:draw(true)
+  tb_green:setValue(colortable[num][2]); tb_green:draw(true)
+  tb_blue:setValue(colortable[num][3]); tb_blue:draw(true)
 end
 
 function setTopView() 
@@ -706,8 +715,16 @@ while running do
   else name, add, x, y, b = event.pull(1.0) end
 
   if name == 'key_down' then 
+    print(y)
     -- если нажата 'Q' - выходим
-    if y == 16 then break end
+    if y == 16 then break 
+    elseif y == 41 then
+      moveSelector(0)
+    elseif y>=2 and y<=4 then
+      moveSelector(y-1)
+    elseif y == 211 then
+      clearLayer()
+    end
   elseif name == 'touch' then
     -- проверка GUI
     buttonsClick(x, y)
@@ -715,10 +732,7 @@ while running do
     -- выбор цвета
     if x>MENUX+1 and x<MENUX+37 then
       if y>4 and y<8 then
-        brush.color = math.floor((x-MENUX-1)/8)
-        tb_red:setValue(colortable[brush.color][1]); tb_red:draw(true)
-        tb_green:setValue(colortable[brush.color][2]); tb_green:draw(true)
-        tb_blue:setValue(colortable[brush.color][3]); tb_blue:draw(true)
+        moveSelector(math.floor((x-MENUX-1)/8))
       end
     end
   end
@@ -729,7 +743,7 @@ while running do
     if x >= GRIDX and x < GRIDX+HOLOW*2 then
       if y >= GRIDY and y < GRIDY+limit then
         -- перерисуем, если на экране был мессейдж
-        if repaint then drawLayer(); repaint = false end
+        if repaint then drawLayer() end
         -- рассчет клика
         if view == 0 then
           dx = math.floor((x-GRIDX)/2)+1; gx = dx
