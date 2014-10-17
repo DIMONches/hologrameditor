@@ -36,29 +36,9 @@ function set(x, y, z, value)
 end
 
 -- преобразование цветов
-function changeRed(value) return changeColor(1, value) end
-function changeGreen(value) return changeColor(2, value) end
-function changeBlue(value) return changeColor(3, value) end
+
 function rgb2hex(r,g,b)
   return r*65536+g*256+b
-end
-
-
-function changeColor(rgb, value)
-  if value == nil then return false end
-  n = tonumber(value)
-  if n == nil or n < 0 or n > 255 then return false end
-  -- сохраняем данные в таблицу
-  colortable[brush.color][rgb] = n
-  hexcolortable[brush.color] = 
-      rgb2hex(colortable[brush.color][1],
-              colortable[brush.color][2],
-              colortable[brush.color][3])
-  -- обновляем цвета на панельке
-  for i=0, 3 do
-    drawRect(MENUX+1+i*8, 5, hexcolortable[i])
-  end
-  return true
 end
 
 -- рисование голограммы на проэкторе
@@ -68,6 +48,7 @@ function draw()
 			for z=1,HOLOW do
         if get(x,y,z)~= 0
           then
+              print(get(x,y,z))
 				      h.set(x,y,z,get(x,y,z))
           end
 			end
@@ -102,7 +83,7 @@ function load(filename)
           for i=0, 3 do
             a = byte % 4
             byte = math.floor(byte / 4)
-            if a ~= 0 then set(x,y,z+i,a) end
+            if a ~= 0 then print(a) set(x,y,z+i,a) end
           end
         end
       end
@@ -116,12 +97,21 @@ end
 
 
 -- главная функция
-
+args= {...}
 function main()
-   args= {...}
-   if fs.exists(arg[1])
-   then 
+   if fs.exists(args[1])
+   then
       loadfile(args[1])
+      for x=1, HOLOW do
+      for y=1, HOLOH do
+        for z=1, HOLOW do
+            if get(x,y,z)~= 0
+              then
+                  print(get(x,y,z))
+              end
+        end
+      end
+    end
       draw()
    end
 end
